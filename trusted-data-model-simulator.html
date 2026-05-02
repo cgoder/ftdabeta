@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>运动健康可信数据产品模型 · 模拟系统</title>
+<style>
+:root {
+  --bg: #0f1923;
+  --panel-bg: #1a2733;
+  --border: #263849;
+  --text: #c8d6e5;
+  --text-dim: #7f95ad;
+  --accent: #3498db;
+  --green: #2ecc71;
+  --red: #e74c3c;
+  --orange: #f39c12;
+  --teal: #1abc9c;
+  --purple: #9b59b6;
+  --radius: 8px;
+  --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+header {
+  text-align: center;
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-bg);
+}
+header h1 {
+  font-size: 1.4em;
+  font-weight: 700;
+  color: #e8edf2;
+  letter-spacing: 0.5px;
+}
+header .subtitle {
+  font-size: 0.82em;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+header .formula-mini {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 14px;
+  background: #1a2a3a;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  color: var(--accent);
+  letter-spacing: 0.3px;
+}
+.main-container {
+  display: flex;
+  min-height: calc(100vh - 90px);
+}
+.left-panel {
+  width: 380px;
+  min-width: 380px;
+  background: var(--panel-bg);
+  border-right: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+  max-height: calc(100vh - 90px);
+}
+.right-panel {
+  flex: 1;
+  padding: 16px 20px;
+  overflow-y: auto;
+  max-height: calc(100vh - 90px);
+}
+
+/* Panel sections */
+.section {
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #14202b;
+  overflow: hidden;
+}
+.section-title {
+  font-size: 0.8em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 10px 14px;
+  background: #111d27;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title .icon { font-size: 0.9em; }
+.section-body { padding: 12px 14px; }
+
+/* Scenario selector */
+.scenario-select {
+  width: 100%;
+  padding: 10px 12px;
+  background: #1a2a3a;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.9em;
+  cursor: pointer;
+  font-family: inherit;
+}
+.scenario-select:focus { outline: none; border-color: var(--accent); }
+
+/* Param rows */
+.param-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 10px;
+}
+.param-label {
+  font-size: 0.82em;
+  color: var(--text);
+  white-space: nowrap;
+  min-width: 100px;
+}
+.param-label .var-name { color: var(--accent); font-family: var(--font-mono); font-weight: 600; }
+.param-row input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: #263849;
+  outline: none;
+}
+.param-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid #fff;
+}
+.param-value {
+  min-width: 42px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  color: var(--accent);
+  font-weight: 600;
+}
+.param-unit {
+  font-size: 0.72em;
+  color: var(--text-dim);
+  min-width: 24px;
+}
+
+/* Quick presets */
+.quick-presets { display: flex; gap: 6px; margin-top: 6px; }
+.quick-preset {
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: #1a2a3a;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.75em;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.quick-preset:hover { border-color: var(--accent); color: var(--text); }
+.quick-preset.active { border-color: var(--accent); color: var(--accent); background: #1a2d3d; }
+
+/* Toggle switch */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.toggle-label { font-size: 0.82em; color: var(--text); }
+.toggle-switch {
+  position: relative;
+  width: 44px; height: 24px;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: #263849;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.toggle-slider:before {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  left: 3px; top: 3px;
+  background: #7f95ad;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+.toggle-switch input:checked + .toggle-slider { background: var(--teal); }
+.toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); background: #fff; }
+
+/* Joint variance sub-params */
+.sub-params {
+  margin-left: 12px;
+  padding: 8px 0 8px 12px;
+  border-left: 2px solid var(--border);
+  display: none;
+}
+.sub-params.visible { display: block; }
+.sub-params .param-label { min-width: 70px; font-size: 0.76em; }
+
+/* Phi dictionary */
+.phi-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid #1a2a3a;
+  font-size: 0.82em;
+}
+.phi-action:last-child { border-bottom: none; }
+.phi-angle { font-size: 0.75em; color: var(--text-dim); font-family: var(--font-mono); }
+
+/* Architecture flow */
+.arch-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 10px;
+  flex-wrap: wrap;
+}
+.arch-node {
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 0.78em;
+  font-weight: 600;
+  min-width: 80px;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+}
+.arch-node .node-title { font-size: 0.85em; margin-bottom: 3px; }
+.arch-node .node-val { font-family: var(--font-mono); font-size: 0.75em; opacity: 0.7; }
+.arch-node.active { border-color: var(--green); background: #162e1f; color: var(--green); }
+.arch-node.inactive { border-color: var(--red); background: #2e1616; color: var(--red); }
+.arch-node.idle { border-color: var(--border); background: #1a2733; color: var(--text-dim); }
+.arch-arrow {
+  font-size: 1.2em;
+  color: var(--text-dim);
+  font-weight: bold;
+}
+
+/* Gauge dashboard */
+.gauge-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.gauge {
+  text-align: center;
+  padding: 12px 8px;
+  border-radius: var(--radius);
+  background: #1a2733;
+  border: 1px solid var(--border);
+}
+.gauge-ring {
+  position: relative;
+  width: 64px; height: 64px;
+  margin: 0 auto 6px;
+}
+.gauge-ring svg { transform: rotate(-90deg); }
+.gauge-ring .bg { fill: none; stroke: #263849; stroke-width: 6; }
+.gauge-ring .fill { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.4s; }
+.gauge-ring .center-val {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 1.1em;
+  font-weight: 700;
+}
+.gauge-label { font-size: 0.72em; color: var(--text-dim); font-weight: 600; }
+.gauge-sub { font-size: 0.65em; color: var(--text-dim); margin-top: 2px; }
+
+/* Time window bar chart */
+.bar-chart-container { overflow-x: auto; padding: 4px 0; }
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  min-height: 120px;
+  padding: 8px 0;
+}
+.bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  min-width: 10px;
+  flex: 1;
+  transition: opacity 0.15s;
+}
+.bar-col:hover { opacity: 0.85; }
+.bar-col .bar {
+  width: 100%;
+  border-radius: 1px 1px 0 0;
+  transition: height 0.3s;
+  min-height: 2px;
+}
+.bar-col .bar.valid { background: var(--green); }
+.bar-col .bar.invalid { background: #3a3540; }
+.bar-col .bar.static { background: var(--teal); }
+.bar-col .bar-idx {
+  font-size: 0.55em;
+  color: var(--text-dim);
+  margin-top: 3px;
+  font-family: var(--font-mono);
+}
+
+/* Bar chart legend */
+.bar-legend { display: flex; gap: 16px; margin-top: 6px; font-size: 0.7em; color: var(--text-dim); }
+.bar-legend span { display: flex; align-items: center; gap: 4px; }
+.bar-legend .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.bar-legend .dot.green { background: var(--green); }
+.bar-legend .dot.gray { background: #3a3540; }
+.bar-legend .dot.teal { background: var(--teal); }
+
+/* Time window detail tooltip */
+.tw-detail {
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: #111d27;
+  border-radius: 6px;
+  font-size: 0.78em;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  display: none;
+  border: 1px solid var(--border);
+}
+.tw-detail.visible { display: block; }
+.tw-detail .detail-row { display: flex; gap: 16px; margin: 3px 0; }
+.tw-detail .detail-val { color: var(--accent); }
+
+/* Accumulator */
+.accum-container { text-align: center; }
+.accum-progress {
+  position: relative;
+  height: 36px;
+  background: #263849;
+  border-radius: 18px;
+  overflow: hidden;
+  margin: 10px 0;
+}
+.accum-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal), var(--green));
+  border-radius: 18px;
+  transition: width 0.5s;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.75em;
+  font-weight: 700;
+  color: #fff;
+  min-width: 0;
+}
+.accum-marker {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 44px;
+  background: var(--red);
+  border-radius: 1px;
+}
+.accum-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7em;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+.accum-controls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.accum-btn {
+  padding: 6px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: #1a2a3a;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.78em;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.accum-btn:hover { border-color: var(--accent); color: var(--accent); }
+.accum-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Conclusion panel */
+.conclusion {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: var(--radius);
+  text-align: center;
+}
+.conclusion.pass { background: linear-gradient(135deg, #0d2e1a, #162e1f); border: 1px solid var(--green); }
+.conclusion.fail { background: linear-gradient(135deg, #2e1616, #2e1111); border: 1px solid var(--red); }
+.conclusion-icon { font-size: 2.4em; }
+.conclusion-info { flex: 1; }
+.conclusion-status { font-size: 1.3em; font-weight: 700; }
+.conclusion.pass .conclusion-status { color: var(--green); }
+.conclusion.fail .conclusion-status { color: var(--red); }
+.conclusion-detail { font-size: 0.8em; color: var(--text-dim); margin-top: 4px; }
+.conclusion-meta { font-size: 0.75em; color: var(--text-dim); margin-top: 6px; font-family: var(--font-mono); }
+.conclusion-advice {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: #111d27;
+  border-radius: 6px;
+  font-size: 0.78em;
+  color: var(--text-dim);
+  border-left: 3px solid var(--orange);
+  text-align: left;
+  line-height: 1.5;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.pulse { animation: pulse 1.5s ease-in-out infinite; }
+
+@keyframes flowDash {
+  to { stroke-dashoffset: -24; }
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+  .main-container { flex-direction: column; }
+  .left-panel {
+    width: 100%;
+    min-width: 100%;
+    max-height: none;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .right-panel { max-height: none; }
+  .gauge-grid { grid-template-columns: repeat(2, 1fr); }
+  .arch-flow { gap: 4px; }
+  .arch-node { padding: 8px 10px; min-width: 60px; font-size: 0.7em; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>运动健康可信数据产品模型 · 模拟系统</h1>
+  <div class="subtitle">动静双擎校验 + 离散积分模型 | 实时交互式演示</div>
+  <div class="formula-mini">Σ [ Aᵢ · max(B<sub>dyn</sub>, B<sub>stat</sub>) · Δt ] ≥ T<sub>target</sub></div>
+</header>
+
+<div class="main-container">
+
+  <!-- ==================== LEFT PANEL ==================== -->
+  <aside class="left-panel">
+
+    <!-- Scenario Selector -->
+    <div class="section">
+      <div class="section-title"><span class="icon">📋</span> 预设场景</div>
+      <div class="section-body">
+        <select class="scenario-select" id="scenarioSelect">
+          <option value="aerobics">跟练健身操 — 动态运动达标</option>
+          <option value="cheat">作弊支架摇晃 — 无人体验证拦截</option>
+          <option value="static">静蹲/平板支撑 — 静态发力达标</option>
+          <option value="interval">间歇运动 — 离散积分累加</option>
+          <option value="leave">中途离开镜头 — 有效积分中断</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Time Parameters -->
+    <div class="section">
+      <div class="section-title"><span class="icon">⏱️</span> 时间维度参数</div>
+      <div class="section-body">
+        <div class="param-row">
+          <span class="param-label"><span class="var-name">Δt</span> 时间窗长度</span>
+          <input type="range" id="deltaT" min="1" max="10" value="3" step="1">
+          <span class="param-value" id="deltaTVal">3</span>
+          <span class="param-unit">秒</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label"><span class="var-name">K</span> 窗内采样率</span>
+          <input type="range" id="sampleRate" min="1" max="10" value="3" step="1">
+          <span class="param-value" id="sampleRateVal">3</span>
+          <span class="param-unit">次/窗</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label"><span class="var-name">T<sub>target</sub></span> 目标总时长</span>
+          <input type="range" id="targetTime" min="60" max="1800" value="600" step="60">
+          <span class="param-value" id="targetTimeVal">600</span>
+          <span class="param-unit">秒</span>
+        </div>
+        <div class="quick-presets" id="targetPresets">
+          <button class="quick-preset" data-val="600">10 min</button>
+          <button class="quick-preset active" data-val="1200">20 min</button>
+          <button class="quick-preset" data-val="1800">30 min</button>
+        </div>
+        <div class="param-row" style="margin-top:10px;">
+          <span class="param-label"><span class="var-name">N</span> 总时间窗数</span>
+          <span class="param-value" id="totalWindowsVal" style="color:var(--text-dim);">—</span>
+          <span class="param-unit">个</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Space Parameters -->
+    <div class="section">
+      <div class="section-title"><span class="icon">🎯</span> 空间维度参数</div>
+      <div class="section-body">
+        <div class="param-row">
+          <span class="param-label"><span class="var-name">σ²<sub>th</sub></span> 动态方差阈值</span>
+          <input type="range" id="varTh" min="1" max="100" value="30" step="1">
+          <span class="param-value" id="varThVal">30</span>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">联合计算模式</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="jointMode" onchange="toggleJointMode()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="sub-params" id="jointParams">
+          <div class="param-row">
+            <span class="param-label"><span class="var-name">σ²<sub>trunk</sub></span> 躯干</span>
+            <input type="range" id="varTrunk" min="1" max="100" value="30" step="1">
+            <span class="param-value" id="varTrunkVal">30</span>
+          </div>
+          <div class="param-row">
+            <span class="param-label"><span class="var-name">σ²<sub>arms</sub></span> 上肢</span>
+            <input type="range" id="varArms" min="1" max="100" value="25" step="1">
+            <span class="param-value" id="varArmsVal">25</span>
+          </div>
+          <div class="param-row">
+            <span class="param-label"><span class="var-name">σ²<sub>legs</sub></span> 下肢</span>
+            <input type="range" id="varLegs" min="1" max="100" value="35" step="1">
+            <span class="param-value" id="varLegsVal">35</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Static Dictionary Phi -->
+    <div class="section">
+      <div class="section-title"><span class="icon">📐</span> 静态字典 <span style="font-family:var(--font-mono);color:var(--accent);">Φ</span></div>
+      <div class="section-body">
+        <div class="phi-action">
+          <span>深蹲膝角</span>
+          <span class="phi-angle">90° ± <input type="number" id="phiSquat" value="15" min="5" max="30" style="width:44px;background:#1a2a3a;border:1px solid var(--border);color:var(--text);border-radius:4px;text-align:center;font-family:var(--font-mono);padding:2px;">°</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="phiSquatOn" checked onchange="refreshAll()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="phi-action">
+          <span>平板支撑背角</span>
+          <span class="phi-angle">170° ± <input type="number" id="phiPlank" value="10" min="5" max="30" style="width:44px;background:#1a2a3a;border:1px solid var(--border);color:var(--text);border-radius:4px;text-align:center;font-family:var(--font-mono);padding:2px;">°</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="phiPlankOn" checked onchange="refreshAll()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="phi-action">
+          <span>静蹲髋角</span>
+          <span class="phi-angle">120° ± <input type="number" id="phiWallSit" value="20" min="5" max="30" style="width:44px;background:#1a2a3a;border:1px solid var(--border);color:var(--text);border-radius:4px;text-align:center;font-family:var(--font-mono);padding:2px;">°</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="phiWallSitOn" checked onchange="refreshAll()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row" style="margin-top:10px; padding-top:8px; border-top:1px solid #1a2a3a;">
+          <span class="toggle-label">无监督异常检测模式</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="unsupervisedMode" onchange="refreshAll()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ==================== RIGHT PANEL ==================== -->
+  <main class="right-panel">
+
+    <!-- Module 1: Architecture Flow -->
+    <div class="section">
+      <div class="section-title"><span class="icon">🏗️</span> 系统架构流图 — 当前时间窗数据流</div>
+      <div class="section-body">
+        <div class="arch-flow" id="archFlow">
+          <div class="arch-node idle" id="archAI">
+            <div class="node-title">可信过滤引擎 Aᵢ</div>
+            <div class="node-val">待判定</div>
+          </div>
+          <span class="arch-arrow">→</span>
+          <div class="arch-node idle" id="archBDyn">
+            <div class="node-title">动态方差引擎 B<sub>dyn</sub></div>
+            <div class="node-val">待判定</div>
+          </div>
+          <span class="arch-arrow">↘</span>
+          <div class="arch-node idle" id="archOp">
+            <div class="node-title">max()</div>
+            <div class="node-val">取最大值</div>
+          </div>
+          <span class="arch-arrow">→</span>
+          <div class="arch-node idle" id="archAcc">
+            <div class="node-title">离散积分累加器</div>
+            <div class="node-val">Σ 累加</div>
+          </div>
+          <span class="arch-arrow">↗</span>
+          <div class="arch-node idle" id="archBStat">
+            <div class="node-title">静态构型引擎 B<sub>stat</sub></div>
+            <div class="node-val">待判定</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Module 2: Engine Gauges -->
+    <div class="section">
+      <div class="section-title"><span class="icon">📊</span> 引擎状态仪表盘 — 当前时间窗 <span id="currentWinLabel" style="color:var(--accent);">#1</span></div>
+      <div class="section-body">
+        <div class="gauge-grid" id="gaugeGrid">
+          <div class="gauge">
+            <div class="gauge-ring" id="ringAI"></div>
+            <div class="gauge-label">Aᵢ 可信引擎</div>
+            <div class="gauge-sub">数据真实性</div>
+          </div>
+          <div class="gauge">
+            <div class="gauge-ring" id="ringBDyn"></div>
+            <div class="gauge-label">B<sub>dyn</sub> 动态引擎</div>
+            <div class="gauge-sub">运动有效性</div>
+          </div>
+          <div class="gauge">
+            <div class="gauge-ring" id="ringBStat"></div>
+            <div class="gauge-label">B<sub>stat</sub> 静态引擎</div>
+            <div class="gauge-sub">数据完备性</div>
+          </div>
+          <div class="gauge">
+            <div class="gauge-ring" id="ringVDyn"></div>
+            <div class="gauge-label">V<sub>dyn</sub> 动态方差</div>
+            <div class="gauge-sub" id="varThLabel">阈值 σ²=30</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Module 3: Time Window Sequence -->
+    <div class="section">
+      <div class="section-title"><span class="icon">📈</span> 时间窗序列图 — 每窗贡献有效秒数</div>
+      <div class="section-body">
+        <div class="bar-chart-container">
+          <div class="bar-chart" id="barChart"></div>
+        </div>
+        <div class="bar-legend">
+          <span><span class="dot green"></span> 动态有效 (B<sub>dyn</sub>=1)</span>
+          <span><span class="dot teal"></span> 静态有效 (B<sub>stat</sub>=1)</span>
+          <span><span class="dot gray"></span> 无效/过滤 (Aᵢ=0 或 B=0)</span>
+        </div>
+        <div class="tw-detail" id="twDetail"></div>
+      </div>
+    </div>
+
+    <!-- Module 4: Accumulator -->
+    <div class="section">
+      <div class="section-title"><span class="icon">🧮</span> 离散积分累加器</div>
+      <div class="section-body accum-container">
+        <div class="accum-progress" id="accumProgress">
+          <div class="accum-fill" id="accumFill" style="width:0%;"></div>
+          <div class="accum-marker" id="accumMarker" style="left:0%;"></div>
+        </div>
+        <div class="accum-labels">
+          <span>0 秒</span>
+          <span id="accumCurrent">当前: 0s</span>
+          <span id="accumTarget">T<sub>target</sub>: 600s</span>
+        </div>
+        <div class="accum-controls">
+          <button class="accum-btn" id="btnReset" onclick="resetAccum()">⏮ 重置</button>
+          <button class="accum-btn" id="btnStep" onclick="stepAccum()">⏭ 步进</button>
+          <button class="accum-btn" id="btnPlay" onclick="togglePlay()">▶ 播放</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Module 5: Conclusion -->
+    <div class="section">
+      <div class="section-title"><span class="icon">✅</span> 模拟结论</div>
+      <div class="section-body">
+        <div class="conclusion pass" id="conclusionPanel">
+          <div class="conclusion-icon" id="conclusionIcon"></div>
+          <div class="conclusion-info">
+            <div class="conclusion-status" id="conclusionStatus"></div>
+            <div class="conclusion-detail" id="conclusionDetail"></div>
+            <div class="conclusion-meta" id="conclusionMeta"></div>
+          </div>
+        </div>
+        <div class="conclusion-advice" id="conclusionAdvice"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ==================== STATE ====================
+let scenarioData = [];
+let timeWindows = [];
+let currentWindowIdx = 0;
+let accumValue = 0;
+let isPlaying = false;
+let playTimer = null;
+
+// ==================== SCENARIO GENERATORS ====================
+function generateAerobicsData() {
+  const N = 40;
+  const data = [];
+  for (let i = 0; i < N; i++) {
+    const Vdyn = 40 + Math.random() * 50;
+    data.push({ Ai: 1, Bdyn: 1, Bstat: 0, Vdyn: Vdyn, Vtrunk: Vdyn * (0.7 + Math.random() * 0.6), Varms: 30 + Math.random() * 60, Vlegs: 20 + Math.random() * 50 });
+  }
+  return data;
+}
+
+function generateCheatData() {
+  const N = 40;
+  const data = [];
+  for (let i = 0; i < N; i++) {
+    const hasBody = Math.random() < 0.35;
+    if (!hasBody) {
+      data.push({ Ai: 0, Bdyn: 0, Bstat: 0, Vdyn: Math.random() * 60, Vtrunk: Math.random() * 30, Varms: Math.random() * 80, Vlegs: Math.random() * 50 });
+    } else {
+      const Vdyn = 5 + Math.random() * 25;
+      const passTh = Vdyn >= 30;
+      data.push({ Ai: 1, Bdyn: passTh ? 1 : 0, Bstat: 0, Vdyn: Vdyn, Vtrunk: Vdyn * 0.8, Varms: 2 + Math.random() * 20, Vlegs: 2 + Math.random() * 15 });
+    }
+  }
+  return data;
+}
+
+function generateStaticData() {
+  const N = 40;
+  const data = [];
+  for (let i = 0; i < N; i++) {
+    const Vdyn = 2 + Math.random() * 12;
+    data.push({ Ai: 1, Bdyn: 0, Bstat: 1, Vdyn: Vdyn, Vtrunk: Vdyn * 0.9, Varms: Math.random() * 8, Vlegs: Math.random() * 8 });
+  }
+  return data;
+}
+
+function generateIntervalData() {
+  const N = 50;
+  const data = [];
+  let active = true;
+  for (let i = 0; i < N; i++) {
+    if (i % 8 === 0) active = !active;
+    if (active) {
+      const Vdyn = 35 + Math.random() * 55;
+      data.push({ Ai: 1, Bdyn: 1, Bstat: 0, Vdyn: Vdyn, Vtrunk: Vdyn * 0.8, Varms: 25 + Math.random() * 60, Vlegs: 30 + Math.random() * 50 });
+    } else {
+      data.push({ Ai: 1, Bdyn: 0, Bstat: 0, Vdyn: 3 + Math.random() * 10, Vtrunk: Math.random() * 5, Varms: Math.random() * 8, Vlegs: Math.random() * 6 });
+    }
+  }
+  return data;
+}
+
+function generateLeaveData() {
+  const N = 40;
+  const data = [];
+  for (let i = 0; i < N; i++) {
+    let Ai, Vdyn;
+    if (i < 10) { Ai = 1; Vdyn = 30 + Math.random() * 50; }
+    else if (i < 18) { Ai = 0; Vdyn = Math.random() * 5; }
+    else if (i < 30) { Ai = 1; Vdyn = 25 + Math.random() * 55; }
+    else { Ai = 0; Vdyn = Math.random() * 3; }
+    data.push({ Ai: Ai, Bdyn: Ai === 1 ? 1 : 0, Bstat: 0, Vdyn: Vdyn, Vtrunk: Vdyn * (0.7 + Math.random() * 0.6), Varms: 15 + Math.random() * 50, Vlegs: 10 + Math.random() * 40 });
+  }
+  return data;
+}
+
+// ==================== CALCULATION ====================
+function getDeltaT() { return parseInt(document.getElementById('deltaT').value); }
+function getTargetTime() { return parseInt(document.getElementById('targetTime').value); }
+function getVarTh() { return parseInt(document.getElementById('varTh').value); }
+function isJointMode() { return document.getElementById('jointMode').checked; }
+function isUnsupervised() { return document.getElementById('unsupervisedMode').checked; }
+
+function getVarThresholds() {
+  if (isJointMode()) {
+    return {
+      trunk: parseInt(document.getElementById('varTrunk').value),
+      arms: parseInt(document.getElementById('varArms').value),
+      legs: parseInt(document.getElementById('varLegs').value)
+    };
+  }
+  const v = getVarTh();
+  return { trunk: v, arms: v, legs: v };
+}
+
+function isStaticDictActive() {
+  return document.getElementById('phiSquatOn').checked ||
+         document.getElementById('phiPlankOn').checked ||
+         document.getElementById('phiWallSitOn').checked ||
+         isUnsupervised();
+}
+
+function computeBI(d) {
+  let Bdyn, Bstat;
+
+  if (isJointMode()) {
+    const t = getVarThresholds();
+    Bdyn = (d.Vtrunk >= t.trunk || d.Varms >= t.arms || d.Vlegs >= t.legs) ? 1 : 0;
+  } else {
+    Bdyn = d.Vdyn >= getVarTh() ? 1 : 0;
+  }
+
+  if (isUnsupervised()) {
+    Bstat = (d.Vdyn < getVarTh() && d.Vdyn > 2 && d.Ai === 1) ? 1 : 0;
+  } else if (isStaticDictActive()) {
+    Bstat = d.Bstat;
+  } else {
+    Bstat = 0;
+  }
+
+  return { Bdyn, Bstat, Bi: Math.max(Bdyn, Bstat) };
+}
+
+function computeContribution(d) {
+  const { Bi } = computeBI(d);
+  const contrib = d.Ai * Bi * getDeltaT();
+  return { ...computeBI(d), Bi, contrib };
+}
+
+function computeTotal() {
+  return timeWindows.reduce((sum, tw) => sum + tw.contrib, 0);
+}
+
+// ==================== RENDER ====================
+function createRing(container, value, maxVal, color) {
+  const r = 26;
+  const circ = 2 * Math.PI * r;
+  const pct = maxVal > 0 ? Math.min(value / maxVal, 1) : 0;
+  const offset = circ * (1 - pct);
+  container.innerHTML = `
+    <svg width="64" height="64" viewBox="0 0 64 64">
+      <circle class="bg" cx="32" cy="32" r="${r}"/>
+      <circle class="fill" cx="32" cy="32" r="${r}" stroke="${color}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/>
+    </svg>
+    <div class="center-val" style="color:${color}">${pct >= 0.995 && maxVal > 0 ? value : value.toFixed(value === Math.floor(value) ? 0 : 1)}</div>`;
+}
+
+function renderGauges() {
+  if (timeWindows.length === 0) return;
+  const tw = timeWindows[currentWindowIdx];
+  const vth = getVarTh();
+  const maxVdyn = 100;
+
+  createRing(document.getElementById('ringAI'), tw.Ai, 1, tw.Ai ? '#2ecc71' : '#e74c3c');
+  createRing(document.getElementById('ringBDyn'), tw.BdynComputed, 1, tw.BdynComputed ? '#2ecc71' : '#e74c3c');
+  createRing(document.getElementById('ringBStat'), tw.BstatComputed, 1, tw.BstatComputed ? '#1abc9c' : '#e74c3c');
+  createRing(document.getElementById('ringVDyn'), tw.Vdyn, maxVdyn, tw.Vdyn >= vth ? '#2ecc71' : '#f39c12');
+
+  document.getElementById('varThLabel').textContent = `阈值 σ²=${isJointMode() ? '联合' : vth}`;
+  document.getElementById('currentWinLabel').textContent = `#${currentWindowIdx + 1}`;
+}
+
+function renderArchFlow() {
+  if (timeWindows.length === 0) {
+    ['archAI','archBDyn','archBStat','archOp','archAcc'].forEach(id => {
+      document.getElementById(id).className = 'arch-node idle';
+      document.getElementById(id).querySelector('.node-val').textContent = '待判定';
+    });
+    return;
+  }
+  const tw = timeWindows[currentWindowIdx];
+  const setNode = (id, val, label) => {
+    const el = document.getElementById(id);
+    el.querySelector('.node-val').textContent = label;
+    el.className = 'arch-node ' + (val > 0 ? 'active' : 'inactive');
+  };
+  setNode('archAI', tw.Ai, tw.Ai ? '1 ✓' : '0 ✗');
+  setNode('archBDyn', tw.BdynComputed, tw.BdynComputed ? '1 ✓' : '0 ✗');
+  setNode('archBStat', tw.BstatComputed, tw.BstatComputed ? '1 ✓' : '0 ✗');
+  const bi = Math.max(tw.BdynComputed, tw.BstatComputed);
+  setNode('archOp', bi, `max=${bi}`);
+  const elAcc = document.getElementById('archAcc');
+  elAcc.querySelector('.node-val').textContent = `+${tw.contrib}s`;
+  elAcc.className = 'arch-node ' + (tw.contrib > 0 ? 'active' : 'inactive');
+}
+
+function renderBarChart() {
+  const container = document.getElementById('barChart');
+  if (timeWindows.length === 0) { container.innerHTML = ''; return; }
+
+  const maxContrib = Math.max(...timeWindows.map(tw => tw.contrib), 1);
+  const maxH = 100;
+
+  container.innerHTML = timeWindows.map((tw, i) => {
+    const h = Math.max((tw.contrib / maxContrib) * maxH, 2);
+    let cls = 'invalid';
+    if (tw.contrib > 0 && tw.BstatComputed && !tw.BdynComputed) cls = 'static';
+    else if (tw.contrib > 0) cls = 'valid';
+    const sel = i === currentWindowIdx ? 'style="opacity:1;transform:scaleY(1.06);"' : '';
+    return `<div class="bar-col" onclick="selectWindow(${i})" ${sel}>
+      <div class="bar ${cls}" style="height:${h}px;"></div>
+      <span class="bar-idx">${i+1}</span>
+    </div>`;
+  }).join('');
+}
+
+function selectWindow(idx) {
+  currentWindowIdx = Math.max(0, Math.min(idx, timeWindows.length - 1));
+  refreshVisuals();
+}
+
+function renderDetail() {
+  const detail = document.getElementById('twDetail');
+  if (timeWindows.length === 0) { detail.className = 'tw-detail'; return; }
+  const tw = timeWindows[currentWindowIdx];
+  detail.className = 'tw-detail visible';
+  detail.innerHTML = `
+    <div class="detail-row">时间窗 <strong>#${currentWindowIdx + 1}</strong> | Δt=${getDeltaT()}s | K=${document.getElementById('sampleRate').value}</div>
+    <div class="detail-row">Aᵢ=<span class="detail-val">${tw.Ai}</span> | B<sub>dyn</sub>=<span class="detail-val">${tw.BdynComputed}</span> | B<sub>stat</sub>=<span class="detail-val">${tw.BstatComputed}</span> | Bᵢ=<span class="detail-val">${tw.Bi}</span></div>
+    <div class="detail-row">V<sub>dyn</sub>=<span class="detail-val">${tw.Vdyn.toFixed(1)}</span> | V<sub>trunk</sub>=<span class="detail-val">${tw.Vtrunk.toFixed(1)}</span> | V<sub>arms</sub>=<span class="detail-val">${tw.Varms.toFixed(1)}</span> | V<sub>legs</sub>=<span class="detail-val">${tw.Vlegs.toFixed(1)}</span></div>
+    <div class="detail-row">贡献 <span class="detail-val">${tw.contrib}</span> 秒</div>`;
+}
+
+function updateAccumDisplay() {
+  const total = computeTotal();
+  const target = getTargetTime();
+  const pct = Math.min(total / target * 100, 100);
+  const fill = document.getElementById('accumFill');
+  fill.style.width = pct + '%';
+  fill.textContent = pct > 8 ? Math.round(total) + 's' : '';
+
+  const marker = document.getElementById('accumMarker');
+  marker.style.left = Math.min(pct, 100) + '%';
+
+  document.getElementById('accumCurrent').textContent = `当前: ${Math.round(total)}s`;
+  document.getElementById('accumTarget').textContent = `T_target: ${target}s`;
+}
+
+function renderConclusion() {
+  const total = computeTotal();
+  const target = getTargetTime();
+  const passed = total >= target;
+  const panel = document.getElementById('conclusionPanel');
+  panel.className = 'conclusion ' + (passed ? 'pass' : 'fail');
+
+  document.getElementById('conclusionIcon').textContent = passed ? '✅' : '❌';
+  document.getElementById('conclusionStatus').textContent = passed ? '合约达标 — 触发产品结算' : '合约未达标 — 未触发结算';
+
+  const validWindows = timeWindows.filter(tw => tw.contrib > 0).length;
+  const rate = timeWindows.length > 0 ? (validWindows / timeWindows.length * 100).toFixed(1) : 0;
+  document.getElementById('conclusionDetail').textContent = `有效时间窗 ${validWindows}/${timeWindows.length}（有效率 ${rate}%）`;
+
+  document.getElementById('conclusionMeta').textContent =
+    `Σ = ${Math.round(total)}s  ${passed ? '≥' : '<'}  T_target = ${target}s  |  B_i = max(B_dyn, B_stat)  |  Δt = ${getDeltaT()}s`;
+
+  // Advice
+  let advice = '';
+  if (!passed) {
+    const gap = target - total;
+    if (timeWindows.filter(tw => tw.Ai === 0).length > timeWindows.length * 0.3) {
+      advice = `⚠️ 大量时间窗未通过可信过滤引擎（Aᵢ=0），建议检查人体姿态检测模块或优化摄像头位置。当前差距: ${Math.round(gap)}s`;
+    } else if (getVarTh() > 60) {
+      advice = `⚠️ 动态方差阈值 σ²=${getVarTh()} 偏高，可能过度过滤有效运动。建议降低阈值以提升达标率。当前差距: ${Math.round(gap)}s`;
+    } else if (!isStaticDictActive() && timeWindows.filter(tw => tw.Vdyn < getVarTh() && tw.Ai === 1).length > 10) {
+      advice = `💡 检测到多个窗口有用户在画面中但方差低于阈值，可能正在进行静态训练。建议开启静态字典 Φ 以识别静蹲/平板支撑等动作。`;
+    } else {
+      advice = `💡 当前差距 ${Math.round(gap)}s。可尝试: 延长目标时长 T_target 的窗口观察、降低 σ²_th 阈值、或确认用户运动时长是否足够。`;
+    }
+  } else {
+    advice = `✅ 系统判定通过。离散积分模型成功将非连续运动片段累加至达标线。${
+      isJointMode() ? '联合方差模式开启，多部位 OR 逻辑判定生效。' : ''
+    }${
+      timeWindows.filter(tw => tw.BstatComputed === 1).length > 0 ? '静态构型引擎贡献了部分有效窗口。' : ''
+    }防作弊风控无异常。`;
+  }
+  document.getElementById('conclusionAdvice').textContent = advice;
+
+  // Update accum target label
+  document.getElementById('accumTarget').textContent = `T_target: ${target}s`;
+}
+
+// ==================== FULL REFRESH ====================
+function recalcAllWindows() {
+  timeWindows.forEach(tw => {
+    const r = computeContribution(tw);
+    tw.BdynComputed = r.Bdyn;
+    tw.BstatComputed = r.Bstat;
+    tw.Bi = r.Bi;
+    tw.contrib = r.contrib;
+  });
+}
+
+function refreshVisuals() {
+  renderGauges();
+  renderArchFlow();
+  renderBarChart();
+  renderDetail();
+  updateAccumDisplay();
+  renderConclusion();
+}
+
+function refreshAll() {
+  recalcAllWindows();
+  refreshVisuals();
+}
+
+// ==================== ACCUMULATOR ANIMATION ====================
+function resetAccum() {
+  stopPlay();
+  accumValue = 0;
+  currentWindowIdx = 0;
+  updateAccumDisplay();
+  refreshVisuals();
+}
+
+function stepAccum() {
+  stopPlay();
+  if (currentWindowIdx < timeWindows.length - 1) {
+    currentWindowIdx++;
+    accumValue = timeWindows.slice(0, currentWindowIdx + 1).reduce((s, tw) => s + tw.contrib, 0);
+  }
+  refreshVisuals();
+}
+
+function togglePlay() {
+  if (isPlaying) { stopPlay(); return; }
+  isPlaying = true;
+  document.getElementById('btnPlay').textContent = '⏸ 暂停';
+  document.getElementById('btnStep').disabled = true;
+  document.getElementById('btnReset').disabled = true;
+  if (currentWindowIdx >= timeWindows.length - 1) {
+    currentWindowIdx = 0;
+    accumValue = timeWindows.length > 0 ? timeWindows[0].contrib : 0;
+  }
+  refreshVisuals();
+  advancePlay();
+}
+
+function advancePlay() {
+  if (!isPlaying) return;
+  if (currentWindowIdx >= timeWindows.length - 1) { stopPlay(); return; }
+  currentWindowIdx++;
+  accumValue = timeWindows.slice(0, currentWindowIdx + 1).reduce((s, tw) => s + tw.contrib, 0);
+  refreshVisuals();
+  playTimer = setTimeout(advancePlay, 300);
+}
+
+function stopPlay() {
+  isPlaying = false;
+  clearTimeout(playTimer);
+  document.getElementById('btnPlay').textContent = '▶ 播放';
+  document.getElementById('btnStep').disabled = false;
+  document.getElementById('btnReset').disabled = false;
+}
+
+// ==================== SCENARIO LOADING ====================
+const scenarioDefaults = {
+  aerobics:  { deltaT: 3, targetTime: 600, varTh: 30, jointMode: false, unsupervised: false },
+  cheat:     { deltaT: 3, targetTime: 600, varTh: 30, jointMode: false, unsupervised: false },
+  static:    { deltaT: 3, targetTime: 300, varTh: 30, jointMode: false, unsupervised: false },
+  interval:  { deltaT: 3, targetTime: 600, varTh: 30, jointMode: false, unsupervised: false },
+  leave:     { deltaT: 3, targetTime: 600, varTh: 30, jointMode: false, unsupervised: false }
+};
+
+const scenarioGenerators = {
+  aerobics: generateAerobicsData,
+  cheat: generateCheatData,
+  static: generateStaticData,
+  interval: generateIntervalData,
+  leave: generateLeaveData
+};
+
+function loadScenario(key) {
+  stopPlay();
+
+  const def = scenarioDefaults[key];
+  document.getElementById('deltaT').value = def.deltaT;
+  document.getElementById('targetTime').value = def.targetTime;
+  document.getElementById('varTh').value = def.varTh;
+  document.getElementById('jointMode').checked = def.jointMode;
+  document.getElementById('unsupervisedMode').checked = def.unsupervised;
+  toggleJointMode();
+
+  syncAllSliders();
+
+  scenarioData = scenarioGenerators[key]();
+  timeWindows = scenarioData.map(d => {
+    const r = computeContribution(d);
+    return {
+      Ai: d.Ai,
+      Bdyn: d.Bdyn, Bstat: d.Bstat,
+      BdynComputed: r.Bdyn,
+      BstatComputed: r.Bstat,
+      Bi: r.Bi,
+      contrib: r.contrib,
+      Vdyn: d.Vdyn,
+      Vtrunk: d.Vtrunk,
+      Varms: d.Varms,
+      Vlegs: d.Vlegs
+    };
+  });
+
+  document.getElementById('totalWindowsVal').textContent = timeWindows.length;
+  currentWindowIdx = 0;
+  accumValue = timeWindows.length > 0 ? timeWindows[0].contrib : 0;
+
+  // Update target preset buttons
+  document.querySelectorAll('#targetPresets .quick-preset').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.val) === def.targetTime);
+  });
+
+  refreshVisuals();
+}
+
+// ==================== EVENT HANDLERS ====================
+function syncAllSliders() {
+  document.getElementById('deltaTVal').textContent = document.getElementById('deltaT').value;
+  document.getElementById('sampleRateVal').textContent = document.getElementById('sampleRate').value;
+  document.getElementById('targetTimeVal').textContent = document.getElementById('targetTime').value;
+  document.getElementById('varThVal').textContent = document.getElementById('varTh').value;
+  document.getElementById('varTrunkVal').textContent = document.getElementById('varTrunk').value;
+  document.getElementById('varArmsVal').textContent = document.getElementById('varArms').value;
+  document.getElementById('varLegsVal').textContent = document.getElementById('varLegs').value;
+}
+
+function toggleJointMode() {
+  const on = document.getElementById('jointMode').checked;
+  document.getElementById('jointParams').className = 'sub-params ' + (on ? 'visible' : '');
+  refreshAll();
+}
+
+// Slider value sync
+['deltaT', 'sampleRate', 'targetTime', 'varTh', 'varTrunk', 'varArms', 'varLegs'].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('input', () => {
+    const valId = id + 'Val';
+    document.getElementById(valId).textContent = el.value;
+    if (id === 'targetTime') {
+      document.querySelectorAll('#targetPresets .quick-preset').forEach(b => b.classList.remove('active'));
+    }
+    refreshAll();
+  });
+});
+
+// Target preset buttons
+document.querySelectorAll('#targetPresets .quick-preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('targetTime').value = btn.dataset.val;
+    document.getElementById('targetTimeVal').textContent = btn.dataset.val;
+    document.querySelectorAll('#targetPresets .quick-preset').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    refreshAll();
+  });
+});
+
+// Scenario select
+document.getElementById('scenarioSelect').addEventListener('change', (e) => {
+  loadScenario(e.target.value);
+});
+
+// Phi dictionary inputs
+['phiSquat','phiPlank','phiWallSit'].forEach(id => {
+  document.getElementById(id).addEventListener('input', refreshAll);
+});
+
+// Joint mode toggle (handled inline with onclick)
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' && timeWindows.length > 0) { stepAccum(); }
+  if (e.key === 'ArrowLeft' && timeWindows.length > 0 && currentWindowIdx > 0) {
+    stopPlay();
+    currentWindowIdx--;
+    accumValue = timeWindows.slice(0, currentWindowIdx + 1).reduce((s, tw) => s + tw.contrib, 0);
+    refreshVisuals();
+  }
+  if (e.key === ' ' && timeWindows.length > 0) { e.preventDefault(); togglePlay(); }
+});
+
+// ==================== INIT ====================
+syncAllSliders();
+loadScenario('aerobics');
+</script>
+</body>
+</html>

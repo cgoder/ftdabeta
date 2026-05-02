@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>运动健康可信数据产品模型模拟器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        .param-group {
+            margin: 10px 0;
+        }
+        label {
+            display: inline-block;
+            width: 250px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input[type="range"] {
+            width: 300px;
+            vertical-align: middle;
+        }
+        .value-display {
+            display: inline-block;
+            width: 60px;
+            text-align: right;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        .formula {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+        }
+        .result-box {
+            background-color: #d5f4e6;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .failure {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .engine-result {
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 3px;
+            background-color: #e8f4fd;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .input-controls {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .time-window {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>运动健康可信数据产品模型模拟器</h1>
+
+        <div class="formula">
+            核心公式: Σ [Aᵢ · max(B<sub>dyn</sub>, B<sub>stat</sub>) · Δt ] ≥ T<sub>target</sub>
+        </div>
+
+        <div class="section">
+            <h2>可调参数设置</h2>
+
+            <div class="param-group">
+                <label for="deltaT">Δt (时间窗长度, 秒):</label>
+                <input type="range" id="deltaT" min="1" max="10" value="3" oninput="updateValue('deltaTVal', this.value)">
+                <span class="value-display" id="deltaTVal">3</span>
+            </div>
+
+            <div class="param-group">
+                <label for="samplingRate">K (时间窗内采样率, 次/窗口):</label>
+                <input type="range" id="samplingRate" min="1" max="10" value="3" oninput="updateValue('samplingRateVal', this.value)">
+                <span class="value-display" id="samplingRateVal">3</span>
+            </div>
+
+            <div class="param-group">
+                <label for="targetThreshold">T<sub>target</sub> (目标总时长, 秒):</label>
+                <input type="range" id="targetThreshold" min="60" max="1800" value="1200" step="60" oninput="updateValue('targetThresholdVal', this.value)">
+                <span class="value-display" id="targetThresholdVal">1200</span>
+            </div>
+
+            <div class="param-group">
+                <label for="varianceThreshold">σ²<sub>th</sub> (动态方差阈值):</label>
+                <input type="range" id="varianceThreshold" min="1" max="100" value="25" oninput="updateValue('varianceThresholdVal', this.value)">
+                <span class="value-display" id="varianceThresholdVal">25</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>当前状态模拟</h2>
+
+            <div class="param-group">
+                <label for="trustEngine">Aᵢ (可信引擎结果):</label>
+                <input type="range" id="trustEngine" min="0" max="1" value="1" step="1" oninput="updateValue('trustEngineVal', this.value)">
+                <span class="value-display" id="trustEngineVal">1</span>
+            </div>
+
+            <div class="param-group">
+                <label for="dynamicEngine">B<sub>dyn</sub> (动态引擎结果):</label>
+                <input type="range" id="dynamicEngine" min="0" max="1" value="1" step="1" oninput="updateValue('dynamicEngineVal', this.value)">
+                <span class="value-display" id="dynamicEngineVal">1</span>
+            </div>
+
+            <div class="param-group">
+                <label for="staticEngine">B<sub>stat</sub> (静态引擎结果):</label>
+                <input type="range" id="staticEngine" min="0" max="1" value="0" step="1" oninput="updateValue('staticEngineVal', this.value)">
+                <span class="value-display" id="staticEngineVal">0</span>
+            </div>
+
+            <div class="param-group">
+                <label for="dynamicVariance">V<sub>dyn</sub> (动态特征方差):</label>
+                <input type="range" id="dynamicVariance" min="0" max="150" value="45" oninput="updateValue('dynamicVarianceVal', this.value)">
+                <span class="value-display" id="dynamicVarianceVal">45</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>时间窗模拟</h2>
+            <p>当前时间窗: <span id="currentTimeWindow">1</span>/N</p>
+            <div id="timeWindowsContainer"></div>
+            <div class="input-controls">
+                <button onclick="addTimeWindow()">添加时间窗</button>
+                <button onclick="removeTimeWindow()">删除最后时间窗</button>
+                <button onclick="resetSimulation()">重置模拟</button>
+                <button onclick="calculateResult()">计算结果</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>静态字典配置 (Φ)</h2>
+            <textarea id="staticDict" rows="4" cols="80" placeholder="请输入静态动作识别范围，如: 深蹲膝角: 90°±15°, 平板支撑背角: 170°±10°">深蹲膝角: 90°±15°, 平板支撑背角: 170°±10°, 静蹲髋角: 120°±20°</textarea>
+        </div>
+
+        <div id="resultsSection" style="display:none;">
+            <div class="section">
+                <h2>计算结果</h2>
+                <div id="resultDisplay" class="result-box">
+                    <!-- Results will be displayed here -->
+                </div>
+
+                <div class="engine-result">
+                    <strong>可信过滤引擎 (Aᵢ):</strong> <span id="trustResult">未计算</span><br>
+                    <strong>动态方差引擎 (B<sub>dyn</sub>):</strong> <span id="dynamicResult">未计算</span><br>
+                    <strong>静态构型引擎 (B<sub>stat</sub>):</strong> <span id="staticResult">未计算</span><br>
+                    <strong>有效运动时间累计:</strong> <span id="cumulativeTime">0</span> 秒<br>
+                    <strong>目标达成情况:</strong> <span id="targetStatus">未计算</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let timeWindows = [];
+        let currentTimeWindowIndex = 1;
+
+        function updateValue(elementId, value) {
+            document.getElementById(elementId).textContent = value;
+        }
+
+        function addTimeWindow() {
+            const deltaT = parseInt(document.getElementById('deltaT').value);
+            const samplingRate = parseInt(document.getElementById('samplingRate').value);
+            const varianceThreshold = parseInt(document.getElementById('varianceThreshold').value);
+
+            // Get current slider values for this time window
+            const trustEngine = parseInt(document.getElementById('trustEngine').value);
+            const dynamicEngine = parseInt(document.getElementById('dynamicEngine').value);
+            const staticEngine = parseInt(document.getElementById('staticEngine').value);
+            const dynamicVariance = parseInt(document.getElementById('dynamicVariance').value);
+
+            // Calculate B_i as max(B_dyn, B_stat)
+            const B_i = Math.max(dynamicEngine, staticEngine);
+
+            // Calculate contribution: A_i * B_i * Δt
+            const contribution = trustEngine * B_i * deltaT;
+
+            const timeWindow = {
+                index: currentTimeWindowIndex++,
+                deltaT: deltaT,
+                samplingRate: samplingRate,
+                trustEngine: trustEngine,
+                dynamicEngine: dynamicEngine,
+                staticEngine: staticEngine,
+                dynamicVariance: dynamicVariance,
+                B_i: B_i,
+                contribution: contribution,
+                varianceThreshold: varianceThreshold
+            };
+
+            timeWindows.push(timeWindow);
+
+            updateTimeWindowsDisplay();
+        }
+
+        function removeTimeWindow() {
+            if (timeWindows.length > 0) {
+                timeWindows.pop();
+                currentTimeWindowIndex--;
+                updateTimeWindowsDisplay();
+            }
+        }
+
+        function resetSimulation() {
+            timeWindows = [];
+            currentTimeWindowIndex = 1;
+            document.getElementById('timeWindowsContainer').innerHTML = '';
+            document.getElementById('resultsSection').style.display = 'none';
+        }
+
+        function updateTimeWindowsDisplay() {
+            const container = document.getElementById('timeWindowsContainer');
+            container.innerHTML = '';
+
+            timeWindows.forEach((window, index) => {
+                const div = document.createElement('div');
+                div.className = 'time-window';
+                div.innerHTML = `
+                    <strong>时间窗 ${window.index}:</strong><br>
+                    Δt=${window.deltaT}s, Aᵢ=${window.trustEngine}, B<sub>dyn</sub>=${window.dynamicEngine},
+                    B<sub>stat</sub>=${window.staticEngine}, V<sub>dyn</sub>=${window.dynamicVariance}<br>
+                    Bᵢ=max(B<sub>dyn</sub>,B<sub>stat</sub>)=${window.B_i},
+                    贡献=${window.contribution}秒
+                `;
+                container.appendChild(div);
+            });
+
+            document.getElementById('currentTimeWindow').textContent = timeWindows.length > 0 ? timeWindows[timeWindows.length-1].index + 1 : 1;
+        }
+
+        function calculateResult() {
+            if (timeWindows.length === 0) {
+                alert('请至少添加一个时间窗来计算结果');
+                return;
+            }
+
+            // Sum all contributions
+            const totalContribution = timeWindows.reduce((sum, window) => sum + window.contribution, 0);
+
+            // Get target threshold
+            const targetThreshold = parseInt(document.getElementById('targetThreshold').value);
+
+            // Determine if target is reached
+            const targetReached = totalContribution >= targetThreshold;
+
+            // Update the display
+            const resultDiv = document.getElementById('resultDisplay');
+            resultDiv.textContent = `${targetReached ? '✅ 目标达成!' : '❌ 目标未达成'} 您的有效运动时间为 ${totalContribution} 秒，目标为 ${targetThreshold} 秒`;
+            resultDiv.className = `result-box ${targetReached ? 'success' : 'failure'}`;
+
+            // Calculate individual engine results
+            const avgTrust = timeWindows.reduce((sum, window) => sum + window.trustEngine, 0) / timeWindows.length;
+            const avgDynamic = timeWindows.reduce((sum, window) => sum + window.dynamicEngine, 0) / timeWindows.length;
+            const avgStatic = timeWindows.reduce((sum, window) => sum + window.staticEngine, 0) / timeWindows.length;
+
+            document.getElementById('trustResult').textContent = `${avgTrust.toFixed(2)} (平均值，范围: 0-1)`;
+            document.getElementById('dynamicResult').textContent = `${avgDynamic.toFixed(2)} (平均值，范围: 0-1)`;
+            document.getElementById('staticResult').textContent = `${avgStatic.toFixed(2)} (平均值，范围: 0-1)`;
+            document.getElementById('cumulativeTime').textContent = totalContribution;
+            document.getElementById('targetStatus').textContent = targetReached ? `达标 (${totalContribution} >= ${targetThreshold})` : `未达标 (${totalContribution} < ${targetThreshold})`;
+
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+
+        // Initialize value displays
+        updateValue('deltaTVal', document.getElementById('deltaT').value);
+        updateValue('samplingRateVal', document.getElementById('samplingRate').value);
+        updateValue('targetThresholdVal', document.getElementById('targetThreshold').value);
+        updateValue('varianceThresholdVal', document.getElementById('varianceThreshold').value);
+        updateValue('trustEngineVal', document.getElementById('trustEngine').value);
+        updateValue('dynamicEngineVal', document.getElementById('dynamicEngine').value);
+        updateValue('staticEngineVal', document.getElementById('staticEngine').value);
+        updateValue('dynamicVarianceVal', document.getElementById('dynamicVariance').value);
+    </script>
+</body>
+</html>

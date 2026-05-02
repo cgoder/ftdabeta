@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活力GO - 可信数据产品模型模拟系统</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(to bottom, #f0f8ff, #e6f3ff);
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #4a90e2;
+        }
+        h1 {
+            color: #2c5aa0;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 1.2em;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+        .panel {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+        }
+        .panel-title {
+            font-size: 1.3em;
+            color: #2c5aa0;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #cbd5e0;
+        }
+        .parameter-group {
+            margin-bottom: 20px;
+        }
+        .param-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 8px 0;
+        }
+        .param-label {
+            font-weight: bold;
+            color: #4a5568;
+        }
+        .param-input {
+            width: 100px;
+            padding: 6px 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .range-input {
+            width: 100%;
+            margin-top: 5px;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .result-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+        .result-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #2c5aa0;
+            margin: 10px 0;
+        }
+        .result-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .visualization {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        .chart-container {
+            height: 300px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 6px;
+        }
+        .chart-bar {
+            width: 60px;
+            background: linear-gradient(to top, #4a90e2, #63b3ed);
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            margin: 0 10px;
+        }
+        .chart-label {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 0.8em;
+            color: #666;
+        }
+        .chart-value {
+            position: absolute;
+            top: -25px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.8em;
+            color: #4a5568;
+        }
+        button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 20px;
+        }
+        button:hover {
+            background: #3182ce;
+        }
+        .system-flow {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f0f8ff;
+            border-radius: 8px;
+        }
+        .flow-stages {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .stage {
+            text-align: center;
+            margin: 10px;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            min-width: 150px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .stage-title {
+            font-weight: bold;
+            color: #2c5aa0;
+            margin-bottom: 8px;
+        }
+        .stage-desc {
+            font-size: 0.85em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>活力GO</h1>
+            <div class="subtitle">可信数据产品模型模拟系统</div>
+        </header>
+
+        <div class="dashboard">
+            <div class="panel">
+                <h3 class="panel-title">数据采集参数</h3>
+
+                <div class="parameter-group">
+                    <div class="param-row">
+                        <span class="param-label">进场参与率</span>
+                        <input type="number" id="entryRate" class="param-input" value="75" min="0" max="100">%
+                        <input type="range" class="range-input" id="entryRateSlider" value="75" min="0" max="100">
+                    </div>
+
+                    <div class="param-row">
+                        <span class="param-label">团课参与率</span>
+                        <input type="number" id="classRate" class="param-input" value="45" min="0" max="100">%
+                        <input type="range" class="range-input" id="classRateSlider" value="45" min="0" max="100">
+                    </div>
+
+                    <div class="param-row">
+                        <span class="param-label">跑步机使用率</span>
+                        <input type="number" id="treadmillRate" class="param-input" value="35" min="0" max="100">%
+                        <input type="range" class="range-input" id="treadmillRateSlider" value="35" min="0" max="100">
+                    </div>
+
+                    <div class="param-row">
+                        <span class="param-label">LITTA入镜检测率</span>
+                        <input type="number" id="littaDetectionRate" class="param-input" value="90" min="0" max="100">%
+                        <input type="range" class="range-input" id="littaDetectionRateSlider" value="90" min="0" max="100">
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3 class="panel-title">激励与结算参数</h3>
+
+                <div class="parameter-group">
+                    <div class="param-row">
+                        <span class="param-label">用户达标率</span>
+                        <input type="number" id="achievementRate" class="param-input" value="60" min="0" max="100">%
+                        <input type="range" class="range-input" id="achievementRateSlider" value="60" min="0" max="100">
+                    </div>
+
+                    <div class="param-row">
+                        <span class="param-label">奖励金额 (元)</span>
+                        <input type="number" id="rewardAmount" class="param-input" value="15" min="0" max="100" step="1">
+                    </div>
+
+                    <div class="param-row">
+                        <span class="param-label">月活跃用户</span>
+                        <input type="number" id="monthlyActiveUsers" class="param-input" value="5000" min="0" max="100000" step="100">
+                    </div>
+
+                    <div class="param-row">
+                        <span class="param-label">销售分成比例</span>
+                        <input type="number" id="salesCommission" class="param-input" value="10" min="0" max="50">%
+                        <input type="range" class="range-input" id="salesCommissionSlider" value="10" min="0" max="50">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3 class="panel-title">模拟结果</h3>
+            <div class="results-grid">
+                <div class="result-card">
+                    <div class="result-label">总参与人次</div>
+                    <div id="totalParticipants" class="result-value">2,250</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">达标人次</div>
+                    <div id="achievers" class="result-value">1,350</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">奖励总额 (元)</div>
+                    <div id="totalRewards" class="result-value">20,250</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">销售额 (元)</div>
+                    <div id="totalSales" class="result-value">750,000</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="visualization">
+            <h3 class="panel-title">活动参与可视化</h3>
+            <div class="chart-container" id="activityChart">
+                <div class="chart-column">
+                    <div class="chart-bar" style="height: 200px;">
+                        <div class="chart-value">75%</div>
+                    </div>
+                    <div class="chart-label">进场</div>
+                </div>
+                <div class="chart-column">
+                    <div class="chart-bar" style="height: 120px;">
+                        <div class="chart-value">45%</div>
+                    </div>
+                    <div class="chart-label">团课</div>
+                </div>
+                <div class="chart-column">
+                    <div class="chart-bar" style="height: 105px;">
+                        <div class="chart-value">35%</div>
+                    </div>
+                    <div class="chart-label">跑步机</div>
+                </div>
+                <div class="chart-column">
+                    <div class="chart-bar" style="height: 270px;">
+                        <div class="chart-value">90%</div>
+                    </div>
+                    <div class="chart-label">LITTA检测</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="system-flow">
+            <h3 class="panel-title">系统流程模型</h3>
+            <div class="flow-stages">
+                <div class="stage">
+                    <div class="stage-title">销售</div>
+                    <div class="stage-desc">用户入口落地页 DM</div>
+                </div>
+                <div class="stage">
+                    <div class="stage-title">激活</div>
+                    <div class="stage-desc">用户真实性检验</div>
+                </div>
+                <div class="stage">
+                    <div class="stage-title">服务</div>
+                    <div class="stage-desc">权益开通</div>
+                </div>
+                <div class="stage">
+                    <div class="stage-title">客服</div>
+                    <div class="stage-desc">运营规则</div>
+                </div>
+                <div class="stage">
+                    <div class="stage-title">结算</div>
+                    <div class="stage-desc">奖励发放</div>
+                </div>
+            </div>
+        </div>
+
+        <center>
+            <button onclick="calculateResults()">更新模拟结果</button>
+        </center>
+    </div>
+
+    <script>
+        // 同步数值输入和滑块
+        document.querySelectorAll('.param-input[type="number"]').forEach(input => {
+            const sliderId = input.id + 'Slider';
+            const slider = document.getElementById(sliderId);
+
+            if (slider) {
+                input.addEventListener('input', () => {
+                    slider.value = input.value;
+                    calculateResults();
+                });
+
+                slider.addEventListener('input', () => {
+                    input.value = slider.value;
+                    calculateResults();
+                });
+            }
+        });
+
+        function calculateResults() {
+            // 获取参数值
+            const entryRate = parseFloat(document.getElementById('entryRate').value) || 0;
+            const classRate = parseFloat(document.getElementById('classRate').value) || 0;
+            const treadmillRate = parseFloat(document.getElementById('treadmillRate').value) || 0;
+            const littaDetectionRate = parseFloat(document.getElementById('littaDetectionRate').value) || 0;
+            const achievementRate = parseFloat(document.getElementById('achievementRate').value) || 0;
+            const rewardAmount = parseFloat(document.getElementById('rewardAmount').value) || 0;
+            const monthlyActiveUsers = parseFloat(document.getElementById('monthlyActiveUsers').value) || 0;
+            const salesCommission = parseFloat(document.getElementById('salesCommission').value) || 0;
+
+            // 计算结果
+            const totalParticipants = Math.round(monthlyActiveUsers * (entryRate / 100));
+            const classParticipants = Math.round(monthlyActiveUsers * (classRate / 100));
+            const treadmillParticipants = Math.round(monthlyActiveUsers * (treadmillRate / 100));
+            const detectedUsers = Math.round(monthlyActiveUsers * (littaDetectionRate / 100));
+            const achievers = Math.round(monthlyActiveUsers * (achievementRate / 100));
+            const totalRewards = achievers * rewardAmount;
+
+            // 假设每个活跃用户平均消费150元
+            const avgSpendPerUser = 150;
+            const totalSales = monthlyActiveUsers * avgSpendPerUser;
+            const commissionAmount = totalSales * (salesCommission / 100);
+
+            // 更新结果显示
+            document.getElementById('totalParticipants').textContent = formatNumber(totalParticipants);
+            document.getElementById('achievers').textContent = formatNumber(achievers);
+            document.getElementById('totalRewards').textContent = formatNumber(totalRewards);
+            document.getElementById('totalSales').textContent = formatNumber(totalSales);
+
+            // 更新图表
+            updateChart(entryRate, classRate, treadmillRate, littaDetectionRate);
+        }
+
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        function updateChart(entryRate, classRate, treadmillRate, littaDetectionRate) {
+            const maxHeight = 270; // 最大高度
+
+            // 计算各柱子的高度
+            const entryHeight = (entryRate / 100) * maxHeight;
+            const classHeight = (classRate / 100) * maxHeight;
+            const treadmillHeight = (treadmillRate / 100) * maxHeight;
+            const detectionHeight = (littaDetectionRate / 100) * maxHeight;
+
+            // 获取所有柱子元素并更新
+            const bars = document.querySelectorAll('.chart-bar');
+            bars[0].style.height = `${entryHeight}px`;
+            bars[1].style.height = `${classHeight}px`;
+            bars[2].style.height = `${treadmillHeight}px`;
+            bars[3].style.height = `${detectionHeight}px`;
+
+            // 更新值标签
+            const values = document.querySelectorAll('.chart-value');
+            values[0].textContent = `${entryRate}%`;
+            values[1].textContent = `${classRate}%`;
+            values[2].textContent = `${treadmillRate}%`;
+            values[3].textContent = `${littaDetectionRate}%`;
+        }
+
+        // 页面加载完成后计算初始结果
+        window.onload = function() {
+            calculateResults();
+        };
+    </script>
+</body>
+</html>
