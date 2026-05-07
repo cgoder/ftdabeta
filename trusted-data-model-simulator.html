@@ -498,6 +498,31 @@ header .formula-mini {
       </div>
     </div>
 
+    <!-- User Behavior Parameters -->
+    <div class="section">
+      <div class="section-title"><span class="icon">🏃</span> 用户真实行为参数</div>
+      <div class="section-body">
+        <div class="param-row">
+          <span class="param-label"><span class="var-name">T<sub>actual</sub></span> 用户真实运动时长</span>
+          <input type="range" id="actualTime" min="60" max="3600" value="600" step="60">
+          <span class="param-value" id="actualTimeVal">600</span>
+          <span class="param-unit">秒</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label"><span class="var-name">R<sub>effort</sub></span> 运动强度系数</span>
+          <input type="range" id="effortRatio" min="0.1" max="1.0" value="0.8" step="0.1">
+          <span class="param-value" id="effortRatioVal">0.8</span>
+          <span class="param-unit">比率</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label"><span class="var-name">R<sub>presence</sub></span> 出镜率</span>
+          <input type="range" id="presenceRatio" min="0.1" max="1.0" value="0.95" step="0.05">
+          <span class="param-value" id="presenceRatioVal">0.95</span>
+          <span class="param-unit">比率</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Time Parameters -->
     <div class="section">
       <div class="section-title"><span class="icon">⏱️</span> 时间维度参数</div>
@@ -516,14 +541,14 @@ header .formula-mini {
         </div>
         <div class="param-row">
           <span class="param-label"><span class="var-name">T<sub>target</sub></span> 目标总时长</span>
-          <input type="range" id="targetTime" min="60" max="1800" value="600" step="60">
+          <input type="range" id="targetTime" min="60" max="1800" value="120" step="60">
           <span class="param-value" id="targetTimeVal">600</span>
           <span class="param-unit">秒</span>
         </div>
         <div class="quick-presets" id="targetPresets">
-          <button class="quick-preset" data-val="600">10 min</button>
-          <button class="quick-preset active" data-val="1200">20 min</button>
-          <button class="quick-preset" data-val="1800">30 min</button>
+          <button class="quick-preset active" data-val="120">2 min</button>
+          <button class="quick-preset" data-val="240">4 min</button>
+          <button class="quick-preset" data-val="360">6 min</button>
         </div>
         <div class="param-row" style="margin-top:10px;">
           <span class="param-label"><span class="var-name">N</span> 总时间窗数</span>
@@ -701,7 +726,7 @@ header .formula-mini {
         <div class="accum-labels">
           <span>0 秒</span>
           <span id="accumCurrent">当前: 0s</span>
-          <span id="accumTarget">T<sub>target</sub>: 600s</span>
+          <span id="accumTarget">T<sub>target</sub>: 120s</span>
         </div>
         <div class="accum-controls">
           <button class="accum-btn" id="btnReset" onclick="resetAccum()">⏮ 重置</button>
@@ -740,24 +765,46 @@ let isPlaying = false;
 let playTimer = null;
 
 // ==================== SCENARIO GENERATORS ====================
-function generateAerobicsData() {
-  const N = 40;
+function generateAerobicsData(numWindows = 40) {
   const data = [];
-  for (let i = 0; i < N; i++) {
-    const Vdyn = 40 + Math.random() * 50;
-    data.push({ Ai: 1, Bdyn: 1, Bstat: 0, Vdyn: Vdyn, Vtrunk: Vdyn * (0.7 + Math.random() * 0.6), Varms: 30 + Math.random() * 60, Vlegs: 20 + Math.random() * 50 });
+  const effortRatio = parseFloat(document.getElementById('effortRatio').value || 0.8);
+  const presenceRatio = parseFloat(document.getElementById('presenceRatio').value || 0.95);
+
+  for (let i = 0; i < numWindows; i++) {
+    // 根据运动强度和出镜率调整生成逻辑
+    const isInFrame = Math.random() < presenceRatio;
+    const isEffortful = Math.random() < effortRatio;
+
+    const Ai = isInFrame ? 1 : 0;  // 可信度取决于是否在镜头内
+    const Bdyn = isInFrame && isEffortful ? 1 : 0;  // 动态有效性取决于出镜和努力程度
+    const Bstat = isInFrame && !isEffortful ? 1 : 0;  // 静态有效性对应低强度活动
+
+    const baseVariance = isEffortful ? 40 + Math.random() * 30 : 8 + Math.random() * 10;  // 高强度活动方差大，低强度小
+    const Vdyn = isInFrame ? baseVariance : Math.random() * 5;  // 如果不在帧中，方差很小
+
+    data.push({
+      Ai: Ai,
+      Bdyn: Bdyn,
+      Bstat: Bstat,
+      Vdyn: Vdyn,
+      Vtrunk: Vdyn * (0.7 + Math.random() * 0.3),
+      Varms: isEffortful ? 30 + Math.random() * 30 : Math.random() * 10,
+      Vlegs: isEffortful ? 25 + Math.random() * 25 : Math.random() * 8
+    });
   }
   return data;
 }
 
-function generateCheatData() {
-  const N = 40;
+function generateCheatData(numWindows = 40) {
   const data = [];
-  for (let i = 0; i < N; i++) {
-    const hasBody = Math.random() < 0.35;
+  const presenceRatio = parseFloat(document.getElementById('presenceRatio').value || 0.95);
+
+  for (let i = 0; i < numWindows; i++) {
+    const hasBody = Math.random() < presenceRatio;  // 出镜率影响人体检测
     if (!hasBody) {
       data.push({ Ai: 0, Bdyn: 0, Bstat: 0, Vdyn: Math.random() * 60, Vtrunk: Math.random() * 30, Varms: Math.random() * 80, Vlegs: Math.random() * 50 });
     } else {
+      // 即使有人体，也模拟支架摇晃和真实运动的区别
       const Vdyn = 5 + Math.random() * 25;
       const passTh = Vdyn >= 30;
       data.push({ Ai: 1, Bdyn: passTh ? 1 : 0, Bstat: 0, Vdyn: Vdyn, Vtrunk: Vdyn * 0.8, Varms: 2 + Math.random() * 20, Vlegs: 2 + Math.random() * 15 });
@@ -766,42 +813,103 @@ function generateCheatData() {
   return data;
 }
 
-function generateStaticData() {
-  const N = 40;
+function generateStaticData(numWindows = 40) {
   const data = [];
-  for (let i = 0; i < N; i++) {
-    const Vdyn = 2 + Math.random() * 12;
-    data.push({ Ai: 1, Bdyn: 0, Bstat: 1, Vdyn: Vdyn, Vtrunk: Vdyn * 0.9, Varms: Math.random() * 8, Vlegs: Math.random() * 8 });
+  const effortRatio = parseFloat(document.getElementById('effortRatio').value || 0.8);
+  const presenceRatio = parseFloat(document.getElementById('presenceRatio').value || 0.95);
+
+  for (let i = 0; i < numWindows; i++) {
+    const isInFrame = Math.random() < presenceRatio;
+    const isMaintainingPose = Math.random() < effortRatio;  // 姿势维持能力
+
+    const Ai = isInFrame ? 1 : 0;
+    const Bdyn = 0;  // 静态训练中动态方差通常较低
+    const Bstat = isInFrame && isMaintainingPose ? 1 : 0;  // 静态有效性取决于是否正确维持姿势
+
+    const baseVariance = isMaintainingPose ? 5 + Math.random() * 8 : 2 + Math.random() * 5;  // 正确维持姿势时方差略高
+    const Vdyn = isInFrame ? baseVariance : Math.random() * 3;
+
+    data.push({
+      Ai: Ai,
+      Bdyn: Bdyn,
+      Bstat: Bstat,
+      Vdyn: Vdyn,
+      Vtrunk: Vdyn * 0.9,
+      Varms: isInFrame ? Math.random() * 8 : Math.random() * 2,
+      Vlegs: isInFrame ? Math.random() * 8 : Math.random() * 2
+    });
   }
   return data;
 }
 
-function generateIntervalData() {
-  const N = 50;
+function generateIntervalData(numWindows = 50) {
   const data = [];
+  const effortRatio = parseFloat(document.getElementById('effortRatio').value || 0.8);
+  const presenceRatio = parseFloat(document.getElementById('presenceRatio').value || 0.95);
+
   let active = true;
-  for (let i = 0; i < N; i++) {
-    if (i % 8 === 0) active = !active;
-    if (active) {
+  for (let i = 0; i < numWindows; i++) {
+    // 每隔一定窗口切换一次运动状态
+    if (i > 0 && i % Math.floor(Math.max(6, numWindows/8)) === 0) active = !active;
+
+    const isInFrame = Math.random() < presenceRatio;
+    const isEffortful = active && (Math.random() < effortRatio);
+
+    if (isInFrame && isEffortful) {
       const Vdyn = 35 + Math.random() * 55;
       data.push({ Ai: 1, Bdyn: 1, Bstat: 0, Vdyn: Vdyn, Vtrunk: Vdyn * 0.8, Varms: 25 + Math.random() * 60, Vlegs: 30 + Math.random() * 50 });
-    } else {
+    } else if (isInFrame && !isEffortful && !active) {
+      // 休息期
       data.push({ Ai: 1, Bdyn: 0, Bstat: 0, Vdyn: 3 + Math.random() * 10, Vtrunk: Math.random() * 5, Varms: Math.random() * 8, Vlegs: Math.random() * 6 });
+    } else if (!isInFrame) {
+      // 不在镜头中
+      data.push({ Ai: 0, Bdyn: 0, Bstat: 0, Vdyn: Math.random() * 5, Vtrunk: Math.random() * 3, Varms: Math.random() * 5, Vlegs: Math.random() * 4 });
+    } else {
+      data.push({ Ai: isInFrame ? 1 : 0, Bdyn: 0, Bstat: 0, Vdyn: isInFrame ? 5 + Math.random() * 15 : Math.random() * 3, Vtrunk: isInFrame ? 3 + Math.random() * 8 : Math.random() * 2, Varms: isInFrame ? 5 + Math.random() * 12 : Math.random() * 3, Vlegs: isInFrame ? 4 + Math.random() * 10 : Math.random() * 2 });
     }
   }
   return data;
 }
 
-function generateLeaveData() {
-  const N = 40;
+function generateLeaveData(numWindows = 40) {
   const data = [];
-  for (let i = 0; i < N; i++) {
-    let Ai, Vdyn;
-    if (i < 10) { Ai = 1; Vdyn = 30 + Math.random() * 50; }
-    else if (i < 18) { Ai = 0; Vdyn = Math.random() * 5; }
-    else if (i < 30) { Ai = 1; Vdyn = 25 + Math.random() * 55; }
-    else { Ai = 0; Vdyn = Math.random() * 3; }
-    data.push({ Ai: Ai, Bdyn: Ai === 1 ? 1 : 0, Bstat: 0, Vdyn: Vdyn, Vtrunk: Vdyn * (0.7 + Math.random() * 0.6), Varms: 15 + Math.random() * 50, Vlegs: 10 + Math.random() * 40 });
+  const effortRatio = parseFloat(document.getElementById('effortRatio').value || 0.8);
+  const presenceRatio = parseFloat(document.getElementById('presenceRatio').value || 0.95);
+
+  for (let i = 0; i < numWindows; i++) {
+    let isInFrame, Vdyn;
+    // 前段：正常运动
+    if (i < Math.floor(numWindows * 0.25)) {
+      isInFrame = Math.random() < presenceRatio;
+      Vdyn = isInFrame ? (30 + Math.random() * 50) : Math.random() * 5;
+    }
+    // 中前段：离开镜头
+    else if (i < Math.floor(numWindows * 0.45)) {
+      isInFrame = Math.random() < (presenceRatio * 0.1);  // 极低出镜率
+      Vdyn = isInFrame ? (25 + Math.random() * 30) : Math.random() * 3;
+    }
+    // 中后段：返回运动
+    else if (i < Math.floor(numWindows * 0.75)) {
+      isInFrame = Math.random() < presenceRatio;
+      Vdyn = isInFrame ? (25 + Math.random() * 55) : Math.random() * 4;
+    }
+    // 后段：再次离开
+    else {
+      isInFrame = Math.random() < (presenceRatio * 0.2);  // 较低出镜率
+      Vdyn = isInFrame ? (20 + Math.random() * 40) : Math.random() * 2;
+    }
+
+    const isEffortful = isInFrame && (Math.random() < effortRatio);
+
+    data.push({
+      Ai: isInFrame ? 1 : 0,
+      Bdyn: isInFrame && isEffortful ? 1 : 0,
+      Bstat: isInFrame && !isEffortful && !active ? 1 : 0,
+      Vdyn: Vdyn,
+      Vtrunk: Vdyn * (0.7 + Math.random() * 0.6),
+      Varms: isInFrame ? (15 + Math.random() * 50) : Math.random() * 5,
+      Vlegs: isInFrame ? (10 + Math.random() * 40) : Math.random() * 3
+    });
   }
   return data;
 }
@@ -1087,11 +1195,11 @@ function stopPlay() {
 
 // ==================== SCENARIO LOADING ====================
 const scenarioDefaults = {
-  aerobics:  { deltaT: 3, targetTime: 600, varTh: 30, jointMode: false, unsupervised: false },
-  cheat:     { deltaT: 3, targetTime: 600, varTh: 30, jointMode: false, unsupervised: false },
-  static:    { deltaT: 3, targetTime: 300, varTh: 30, jointMode: false, unsupervised: false },
-  interval:  { deltaT: 3, targetTime: 600, varTh: 30, jointMode: false, unsupervised: false },
-  leave:     { deltaT: 3, targetTime: 600, varTh: 30, jointMode: false, unsupervised: false }
+  aerobics:  { deltaT: 3, targetTime: 120, varTh: 30, jointMode: false, unsupervised: false },
+  cheat:     { deltaT: 3, targetTime: 100, varTh: 30, jointMode: false, unsupervised: false },
+  static:    { deltaT: 3, targetTime: 120, varTh: 30, jointMode: false, unsupervised: false },
+  interval:  { deltaT: 3, targetTime: 75, varTh: 30, jointMode: false, unsupervised: false },
+  leave:     { deltaT: 3, targetTime: 100, varTh: 30, jointMode: false, unsupervised: false }
 };
 
 const scenarioGenerators = {
@@ -1106,16 +1214,29 @@ function loadScenario(key) {
   stopPlay();
 
   const def = scenarioDefaults[key];
-  document.getElementById('deltaT').value = def.deltaT;
-  document.getElementById('targetTime').value = def.targetTime;
+  // 保存当前用户自定义的值
+  const currentDeltaT = document.getElementById('deltaT').value;
+  const currentTargetTime = document.getElementById('targetTime').value;
+
+  // 加载场景默认值，但保留用户已修改的值
   document.getElementById('varTh').value = def.varTh;
   document.getElementById('jointMode').checked = def.jointMode;
   document.getElementById('unsupervisedMode').checked = def.unsupervised;
   toggleJointMode();
 
+  // 恢复用户修改过的值
+  document.getElementById('deltaT').value = currentDeltaT;
+  document.getElementById('targetTime').value = currentTargetTime;
+
   syncAllSliders();
 
-  scenarioData = scenarioGenerators[key]();
+  // 根据用户真实运动时长和时间窗长度计算窗口数量
+  const actualTime = parseInt(document.getElementById('actualTime').value);
+  const deltaTime = parseInt(document.getElementById('deltaT').value);
+  const numWindows = Math.ceil(actualTime / deltaTime);
+
+  // 使用计算出的窗口数量生成数据
+  scenarioData = scenarioGenerators[key](numWindows);
   timeWindows = scenarioData.map(d => {
     const r = computeContribution(d);
     return {
@@ -1138,7 +1259,7 @@ function loadScenario(key) {
 
   // Update target preset buttons
   document.querySelectorAll('#targetPresets .quick-preset').forEach(btn => {
-    btn.classList.toggle('active', parseInt(btn.dataset.val) === def.targetTime);
+    btn.classList.toggle('active', parseInt(btn.dataset.val) === parseInt(document.getElementById('targetTime').value));
   });
 
   refreshVisuals();
@@ -1161,8 +1282,8 @@ function toggleJointMode() {
   refreshAll();
 }
 
-// Slider value sync
-['deltaT', 'sampleRate', 'targetTime', 'varTh', 'varTrunk', 'varArms', 'varLegs'].forEach(id => {
+// Slider value sync for parameters that don't affect data generation
+['sampleRate', 'targetTime', 'varTh', 'varTrunk', 'varArms', 'varLegs', 'effortRatio', 'presenceRatio'].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
   el.addEventListener('input', () => {
@@ -1172,6 +1293,26 @@ function toggleJointMode() {
       document.querySelectorAll('#targetPresets .quick-preset').forEach(b => b.classList.remove('active'));
     }
     refreshAll();
+  });
+});
+
+// Time parameter specific sync with N update - including deltaT display update
+['deltaT', 'actualTime'].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('input', () => {
+    const valId = id + 'Val';
+    document.getElementById(valId).textContent = el.value;
+
+    // Calculate and update N when deltaT or actualTime changes
+    const actualTime = parseInt(document.getElementById('actualTime').value);
+    const deltaTime = parseInt(document.getElementById('deltaT').value);
+    const numWindows = Math.ceil(actualTime / deltaTime);
+    document.getElementById('totalWindowsVal').textContent = numWindows;
+
+    // Only reload scenario when both actualTime and deltaT change significantly
+    // Actually reload on any change to these parameters since they fundamentally affect the data structure
+    loadScenario(document.getElementById('scenarioSelect').value);
   });
 });
 
@@ -1213,6 +1354,32 @@ document.addEventListener('keydown', (e) => {
 // ==================== INIT ====================
 syncAllSliders();
 loadScenario('aerobics');
+
+// Initialize display of N based on initial actualTime and deltaT
+const initialActualTime = parseInt(document.getElementById('actualTime').value);
+const initialDeltaTime = parseInt(document.getElementById('deltaT').value);
+const initialNumWindows = Math.ceil(initialActualTime / initialDeltaTime);
+document.getElementById('totalWindowsVal').textContent = initialNumWindows;
+
+// Add event listeners for the new behavior parameters
+document.getElementById('actualTime').addEventListener('input', () => {
+  const val = document.getElementById('actualTime').value;
+  document.getElementById('actualTimeVal').textContent = val;
+  // Update N display in real-time
+  const deltaTime = parseInt(document.getElementById('deltaT').value);
+  const numWindows = Math.ceil(parseInt(val) / deltaTime);
+  document.getElementById('totalWindowsVal').textContent = numWindows;
+});
+
+document.getElementById('effortRatio').addEventListener('input', () => {
+  const val = document.getElementById('effortRatio').value;
+  document.getElementById('effortRatioVal').textContent = val;
+});
+
+document.getElementById('presenceRatio').addEventListener('input', () => {
+  const val = document.getElementById('presenceRatio').value;
+  document.getElementById('presenceRatioVal').textContent = val;
+});
 </script>
 </body>
 </html>
